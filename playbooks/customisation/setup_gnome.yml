@@ -56,18 +56,6 @@
         executable: /bin/bash
 
       #######################
-      # User Image
-      #######################
-
-    - name: Copy user file to user picture folder
-      ansible.builtin.copy:
-        src: "{{ files_directory }}/{{ user }}.png"
-        dest: "{{ user_home }}/Pictures/{{ user }}.png"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: '0644'
-
-      #######################
       # Wallpaper
       #######################
 
