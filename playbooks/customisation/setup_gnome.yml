@@ -74,7 +74,7 @@
     - name: Copy crimson wallpaper file to Pictures directory
       ansible.builtin.copy:
         src: "{{ files_directory }}/wallpaper.crimson.png"
-        dest: "{{ user_home }}/Pictures/wallpaper.crimson.png"
+        dest: "{{ user_home }}/Pictures/wallpapers/wallpaper.crimson.png"
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0644'
@@ -82,7 +82,7 @@
     - name: Copy fuchsky-duckula wallpaper file to Pictures directory
       ansible.builtin.copy:
         src: "{{ files_directory }}/wallpaper.fuchsky-duckula.png"
-        dest: "{{ user_home }}/Pictures/wallpaper.fuchsky-duckula.png"
+        dest: "{{ user_home }}/Pictures/wallpapers/wallpaper.fuchsky-duckula.png"
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0644'
@@ -96,7 +96,7 @@
 
     - name: Set fact to compare wallpaper
       ansible.builtin.set_fact:
-        wallpaper_changed: "{{ current_wallpaper.stdout != 'file:///home/' + user + '/Pictures/wallpaper.crimson.png' }}"
+        wallpaper_changed: "{{ current_wallpaper.stdout != 'file:///home/' + user + '/Pictures/wallpapers/wallpaper.crimson.png' }}"
 
     - name: Get current GNOME wallpaper (light mode)
       become_user: "{{ user }}"
@@ -108,8 +108,8 @@
     - name: Set GNOME Wallpaper (light mode) to crimson
       become_user: "{{ user }}"
       ansible.builtin.command: >
-        gsettings set org.gnome.desktop.background picture-uri 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
-      when: wallpaper_changed and current_light_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
+        gsettings set org.gnome.desktop.background picture-uri 'file:///home/{{ user }}/Pictures/wallpapers/wallpaper.crimson.png'
+      when: wallpaper_changed and current_light_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpapers/wallpaper.crimson.png'
 
     - name: Get current GNOME Dark Mode wallpaper
       become_user: "{{ user }}"
@@ -121,5 +121,5 @@
     - name: Set GNOME Dark Mode Wallpaper to crimson
       become_user: "{{ user }}"
       ansible.builtin.command: >
-        gsettings set org.gnome.desktop.background picture-uri-dark 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
-      when: wallpaper_changed and current_dark_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpaper.crimson.png'
+        gsettings set org.gnome.desktop.background picture-uri-dark 'file:///home/{{ user }}/Pictures/wallpapers/wallpaper.crimson.png'
+      when: wallpaper_changed and current_dark_wallpaper.stdout != 'file:///home/{{ user }}/Pictures/wallpapers/wallpaper.crimson.png'
