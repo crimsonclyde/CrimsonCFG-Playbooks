@@ -416,64 +416,7 @@
             executable: /bin/bash
           changed_when: true
 
-        - name: Add super-upgrade function to .zshrc
-          become: false
-          vars:
-            zshrc_file: "{{ user_home }}/.zshrc"
-          ansible.builtin.blockinfile:
-            path: "{{ zshrc_file }}"
-            marker: "# {mark} ANSIBLE MANAGED BLOCK: SUPER-UPGRADE FUNCTION"
-            block: |
-              super-upgrade() {
-                # Clear the screen
-                clear
 
-                # Log directory in your home folder
-                LOG_DIR="$HOME/.super-update"
-                mkdir -p "$LOG_DIR"
-
-                # Log file name with timestamp
-                LOG_FILE="$LOG_DIR/$(date '+%Y-%m-%d_%H-%M-%S').log"
-
-                {
-                  echo "##############################"
-                  echo "# 🔄 SUPER-UPGRADE"
-                  echo "#"
-                  echo "# Started at $(date)"
-                  echo "# Kernel version: $(uname -r)"
-                  echo "##############################"
-                } | tee "$LOG_FILE"
-
-                {
-                  echo "##############################"
-                  echo "# 🔄 Updating APT packages..."
-                  echo "##############################"
-                  sudo apt-get update
-                  sudo apt-get full-upgrade -y
-                  sudo apt-get autoremove -y
-                  sudo apt-get clean
-
-                  echo "##############################"
-                  echo "# 🔄 Updating Snap packages..."
-                  echo "##############################"
-                  sudo snap refresh
-
-                  echo "##############################"
-                  echo "# ✅ System fully updated at $(date)!"
-                  echo "##############################"
-
-                  if [ -f /var/run/reboot-required ]; then
-                    echo "##############################"
-                    echo "# ⚠️  Reboot is required!"
-                    echo "##############################"
-                  fi
-                } | tee -a "$LOG_FILE"
-
-                ls -1t "$LOG_DIR" | tail -n +6 | while read -r old_log; do
-                  rm -f "$LOG_DIR/$old_log"
-                done
-              }
-            insertafter: EOF
 
         #######################
         # Debug
