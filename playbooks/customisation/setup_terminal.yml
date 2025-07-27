@@ -282,7 +282,7 @@
     - name: Add fastfetch to .zshrc
       ansible.builtin.lineinfile:
         path: "{{ user_home }}/.zshrc"
-        line: "fastfetch"
+        line: "fastfetch -c /etc/fastfetch/fastfetch_config.jsonc"
         state: present
       when: fastfetch_in_zshrc.rc != 0
 
