@@ -268,23 +268,23 @@
         src: "{{ templates_directory }}/fastfetch_conf.jsonc.j2"
         dest: /etc/fastfetch/fastfetch_config.jsonc
         mode: '0644'
-      when: not fastfetch_config.stat.exists
 
     #######################
     # Add fastfetch to .zshrc
     #######################
 
     - name: Check if fastfetch is in .zshrc
-      ansible.builtin.stat:
-        path: "{{ user_home }}/.zshrc"
-      register: zshrc_file
+      ansible.builtin.shell: grep -q "^fastfetch$" "{{ user_home }}/.zshrc"
+      register: fastfetch_in_zshrc
+      failed_when: false
+      changed_when: false
 
     - name: Add fastfetch to .zshrc
       ansible.builtin.lineinfile:
         path: "{{ user_home }}/.zshrc"
         line: "fastfetch"
         state: present
-      when: not zshrc_file.stat.exists
+      when: fastfetch_in_zshrc.rc != 0
 
     - name: GNOME Terminal - Create or update '{{ user }}' profile
       become: false
