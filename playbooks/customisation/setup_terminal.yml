@@ -473,7 +473,7 @@
                   rm -f "$LOG_DIR/$old_log"
                 done
               }
-            insertafter: "source {{ user_home }}/.p10k.zsh"
+            insertafter: EOF
 
         #######################
         # Debug
