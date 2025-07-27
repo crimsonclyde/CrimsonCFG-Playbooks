@@ -7,6 +7,12 @@
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  
+  # Orca-Slicer-specific variables moved from local.yml to playbook
+  vars:
+    orca_appimage_dir: '{{ appimg_directory }}/OrcaSlicer'
+    orca_appimage_filename: OrcaSlicer.AppImage
+    orca_appimage_url: https://github.com/SoftFever/OrcaSlicer/releases/download/v2.3.0/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.3.0.AppImage
 
   tasks:
 

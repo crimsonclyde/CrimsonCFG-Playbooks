@@ -7,6 +7,12 @@
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  
+  # Prism-Launcher-specific variables moved from local.yml to playbook
+  vars:
+    prism_appimage_dir: '{{ appimg_directory }}/PrismLauncher'
+    prism_appimage_filename: PrismLauncher.AppImage
+    prism_appimage_url: https://api.github.com/repos/PrismLauncher/PrismLauncher/releases/latest
 
   tasks:
 

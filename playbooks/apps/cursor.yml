@@ -7,6 +7,12 @@
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  
+  # Cursor-specific variables moved from local.yml to playbook
+  vars:
+    cursor_appimage_dir: '{{ appimg_directory }}/Cursor'
+    cursor_appimage_filename: Cursor.AppImage
+    cursor_appimage_url: https://downloads.cursor.com/production/faa03b17cce93e8a80b7d62d57f5eda6bb6ab9fa/linux/x64/Cursor-1.2.2-x86_64.AppImage
 
   tasks:
 
