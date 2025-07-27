@@ -1,8 +1,8 @@
-# CrimsonCFG-Name: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
+# CrimsonCFG-Name: Custom Terminal Setup
 # CrimsonCFG-Description: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
 # CrimsonCFG-Essential: false
 ---
-- name: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
+- name: Costum Terminal Setup
   hosts: all
   become: true
   vars_files:
