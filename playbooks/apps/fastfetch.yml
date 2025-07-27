@@ -142,3 +142,19 @@
         dest: /etc/fastfetch/fastfetch_config.jsonc
         mode: '0644'
       when: not fastfetch_config.stat.exists
+
+    #######################
+    # Add to .bashrc
+    #######################
+
+    - name: Check if fastfetch is in .bashrc
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.bashrc"
+      register: bashrc_file
+
+    - name: Add fastfetch to .bashrc
+      ansible.builtin.lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        line: "fastfetch"
+        state: present
+      when: not bashrc_file.stat.exists
