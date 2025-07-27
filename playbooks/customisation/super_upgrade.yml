@@ -1,1 +1,87 @@
- 
+# CrimsonCFG-Name: Super Upgrade Function
+# CrimsonCFG-Description: Updates your system and snaps with one command
+# CrimsonCFG-Essential: false
+---
+- name: Add Super Upgrade Function
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Add super-upgrade function to .zshrc
+    #######################
+
+    - name: Check if super-upgrade function already exists in .zshrc
+      ansible.builtin.shell: grep -q "super-upgrade()" "{{ user_home }}/.zshrc"
+      register: super_upgrade_exists
+      failed_when: false
+      changed_when: false
+
+    - name: Add super-upgrade function to .zshrc
+      become: false
+      ansible.builtin.lineinfile:
+        path: "{{ user_home }}/.zshrc"
+        line: |
+          super-upgrade() {
+            # Clear the screen
+            clear
+
+            # Log directory in your home folder
+            LOG_DIR="$HOME/.super-update"
+            mkdir -p "$LOG_DIR"
+
+            # Log file name with timestamp
+            LOG_FILE="$LOG_DIR/$(date '+%Y-%m-%d_%H-%M-%S').log"
+
+            {
+              echo "##############################"
+              echo "# 🔄 SUPER-UPGRADE"
+              echo "#"
+              echo "# Started at $(date)"
+              echo "# Kernel version: $(uname -r)"
+              echo "##############################"
+            } | tee "$LOG_FILE"
+
+            {
+              echo "##############################"
+              echo "# 🔄 Updating APT packages..."
+              echo "##############################"
+              sudo apt-get update
+              sudo apt-get full-upgrade -y
+              sudo apt-get autoremove -y
+              sudo apt-get clean
+
+              echo "##############################"
+              echo "# 🔄 Updating Snap packages..."
+              echo "##############################"
+              sudo snap refresh
+
+              echo "##############################"
+              echo "# ✅ System fully updated at $(date)!"
+              echo "##############################"
+
+              if [ -f /var/run/reboot-required ]; then
+                echo "##############################"
+                echo "# ⚠️  Reboot is required!"
+                echo "##############################"
+              fi
+            } | tee -a "$LOG_FILE"
+
+            ls -1t "$LOG_DIR" | tail -n +6 | while read -r old_log; do
+              rm -f "$LOG_DIR/$old_log"
+            done
+          }
+        insertafter: EOF
+        state: present
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0644'
+      when: super_upgrade_exists.rc != 0
+
+    - name: Display success message
+      ansible.builtin.debug:
+        msg: "Super-upgrade function has been added to .zshrc. Use 'super-upgrade' command in your terminal."
+      when: super_upgrade_exists.rc != 0
