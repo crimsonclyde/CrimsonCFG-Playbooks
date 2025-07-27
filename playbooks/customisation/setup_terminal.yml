@@ -90,9 +90,13 @@
         regexp: '^ZSH_THEME=".*"$'
         replace: 'ZSH_THEME="powerlevel10k/powerlevel10k"'
 
+    - name: Debug templates directory
+      ansible.builtin.debug:
+        msg: "templates_directory is: {{ templates_directory }}"
+
     - name: Copy p10k.zsh template to user's home directory
       ansible.builtin.template:
-        src: "{{ working_directory }}/templates/p10k.zsh.j2"
+        src: "{{ templates_directory }}/p10k.zsh.j2"
         dest: "{{ user_home }}/.p10k.zsh"
         mode: '0644'
         owner: "{{ user }}"
