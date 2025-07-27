@@ -416,11 +416,11 @@
             executable: /bin/bash
           changed_when: true
 
-        - name: Add super-upgrade function to .zshrc before Powerlevel10k source
+        - name: Add super-upgrade function to .zshrc
           become: false
           vars:
             zshrc_file: "{{ user_home }}/.zshrc"
-          blockinfile:
+          ansible.builtin.blockinfile:
             path: "{{ zshrc_file }}"
             marker: "# {mark} ANSIBLE MANAGED BLOCK: SUPER-UPGRADE FUNCTION"
             block: |
@@ -473,9 +473,7 @@
                   rm -f "$LOG_DIR/$old_log"
                 done
               }
-
-              # /usr/bin/fastfetch
-            insertafter: "^(?=.*source /home/{{ user }}/.p10k.zsh)"
+            insertafter: "source {{ user_home }}/.p10k.zsh"
 
         #######################
         # Debug
