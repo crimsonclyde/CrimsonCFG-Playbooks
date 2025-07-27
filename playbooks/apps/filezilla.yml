@@ -1,0 +1,15 @@
+# CrimsonCFG-Description: Install FileZilla
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
+---
+- name: Install FileZilla
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install FileZilla
+      ansible.builtin.apt:
+        name: filezilla
+        state: present
