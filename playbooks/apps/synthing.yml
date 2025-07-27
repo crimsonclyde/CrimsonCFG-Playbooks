@@ -1,0 +1,20 @@
+# CrimsonCFG-Description: Install Syncthing
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
+---
+- name: Install Syncthing
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install Syncthing
+      ansible.builtin.apt:
+        name: syncthing
+        state: present
+
+    - name: Install Syncthing Tray
+      ansible.builtin.apt:
+        name: syncthingtray
+        state: present
