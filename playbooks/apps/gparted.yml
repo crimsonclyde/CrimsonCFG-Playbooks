@@ -1,0 +1,12 @@
+# CrimsonCFG-Name: GParted
+# CrimsonCFG-Description: Install GParted partition editor
+# CrimsonCFG-Essential: false
+---
+- name: Install GParted
+  hosts: all
+  become: true
+  tasks:
+    - name: Install GParted
+      ansible.builtin.apt:
+        name: gparted
+        state: present

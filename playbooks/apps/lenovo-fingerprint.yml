@@ -1,0 +1,39 @@
+# CrimsonCFG-Name: Lenovo T470s Fingerprint Support
+# CrimsonCFG-Description: Activate fingerprint support for Lenovo T470s using open-fprintd
+# CrimsonCFG-Essential: false
+---
+- name: Activate Lenovo T470s Fingerprint Support
+  hosts: all
+  become: true
+  tasks:
+    - name: Remove fprintd package
+      ansible.builtin.apt:
+        name: fprintd
+        state: absent
+
+    - name: Add open-fprintd PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:uunicorn/open-fprintd
+        state: present
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install fingerprint packages
+      ansible.builtin.apt:
+        name:
+          - open-fprintd
+          - fprintd-clients
+          - python3-validity
+        state: present
+
+    - name: Display enrollment instructions
+      ansible.builtin.debug:
+        msg: |
+          Fingerprint packages installed successfully!
+          
+          To enroll your fingerprint, run:
+          fprintd-enroll
+          
+          Note: You may need to wait a moment for the services to start before enrolling.
