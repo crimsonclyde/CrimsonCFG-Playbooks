@@ -17,10 +17,11 @@
           - apt-transport-https
         state: present
 
-    - name: Add Tailscale GPG key
-      ansible.builtin.apt_key:
+    - name: Download Tailscale GPG key
+      ansible.builtin.get_url:
         url: https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg
-        state: present
+        dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        mode: '0644'
 
     - name: Add Tailscale repository
       ansible.builtin.apt_repository:
