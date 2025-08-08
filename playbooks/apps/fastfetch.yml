@@ -144,17 +144,26 @@
       when: not fastfetch_config.stat.exists
 
     #######################
-    # Add to .bashrc
+    # Add to correct shell rc
     #######################
 
-    - name: Check if fastfetch is in .bashrc
-      ansible.builtin.stat:
-        path: "{{ user_home }}/.bashrc"
-      register: bashrc_file
+    - name: Lookup default shell for target user
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ user | basename }}"
 
-    - name: Add fastfetch to .bashrc
+    - name: Determine rc file based on user shell
+      ansible.builtin.set_fact:
+        user_shell: "{{ ansible_facts.getent_passwd[user | basename][6] | default('/bin/bash') }}"
+        rc_file: "{{ (user_home + '/.zshrc') if (user_shell is search('zsh$')) else (user_home + '/.bashrc') }}"
+
+    - name: Ensure fastfetch runs on shell startup
       ansible.builtin.lineinfile:
-        path: "{{ user_home }}/.bashrc"
-        line: "fastfetch"
+        path: "{{ rc_file }}"
+        line: "fastfetch -c /etc/fastfetch/fastfetch_config.jsonc"
         state: present
-      when: not bashrc_file.stat.exists
+        create: true
+        insertafter: EOF
+        owner: "{{ user | basename }}"
+        group: "{{ user | basename }}"
+        mode: '0644'
