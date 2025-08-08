@@ -1,0 +1,12 @@
+# CrimsonCFG-Name: Kdenlive
+# CrimsonCFG-Description: Install Kdenlive video editor
+# CrimsonCFG-Essential: false
+---
+- name: Install Kdenlive
+  hosts: all
+  become: true
+  tasks:
+    - name: Install Kdenlive
+      ansible.builtin.apt:
+        name: kdenlive
+        state: present
