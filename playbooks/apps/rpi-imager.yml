@@ -3,7 +3,6 @@
 # CrimsonCFG-Essential: false
 # CrimsonCFG-RequiredVars: false
 ---
----
 - name: Install Raspberry Pi Imager
   hosts: all
   become: true
