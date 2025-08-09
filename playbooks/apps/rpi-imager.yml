@@ -1,7 +1,7 @@
 # CrimsonCFG-Name: Raspberry Pi Imager
 # CrimsonCFG-Description: Install Raspberry Pi Imager
 # CrimsonCFG-Essential: false
-# CrimsonCFG-RequiredVars: true
+# CrimsonCFG-RequiredVars: false
 ---
 ---
 - name: Install Raspberry Pi Imager
