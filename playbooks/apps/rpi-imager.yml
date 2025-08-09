@@ -1,0 +1,17 @@
+# CrimsonCFG-Name: Raspberry Pi Imager
+# CrimsonCFG-Description: Install Raspberry Pi Imager
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
+---
+---
+- name: Install Raspberry Pi Imager
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install Krita
+      ansible.builtin.apt:
+        name: rpi-imager
+        state: present
