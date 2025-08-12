@@ -1,0 +1,24 @@
+# CrimsonCFG-Name: Flipper Zero
+# CrimsonCFG-Description: Install apt packages for Flipper Zero
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install apt packages for Flipper Zero
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+
+    ## Info for future /me
+    ## Don't add `set -o pipefail` to jd or kill it breaks the playbook!
+
+  tasks:
+    ## ----------------------------------------------------
+    ## 1) Install Chromium
+    ## ----------------------------------------------------
+    - name: Ensure qflipper is installed (snap)
+      ansible.builtin.apt:
+        name: qflipper
+        state: present
+      tags: qflipper
