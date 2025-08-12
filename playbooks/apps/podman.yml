@@ -1,0 +1,104 @@
+# CrimsonCFG-Name: Podman
+# CrimsonCFG-Description: Install Podman, optional Docker CLI shim, and optional Podman Desktop
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Podman
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  vars:
+    pd_version: "1.20.2"
+    pd_arch: "{{ 'arm64' if ansible_architecture in ['aarch64','arm64'] else 'x86_64' }}"
+    pd_install_dir: "/opt/podman-desktop"
+
+  tasks:
+    #######################
+    # Podman engine + compose
+    #######################
+
+    - name: Refresh apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Podman and compose wrapper
+      ansible.builtin.apt:
+        name:
+          - podman
+          - podman-compose
+        state: present
+
+    - name: Install Docker CLI compatibility via podman-docker (optional)
+      ansible.builtin.apt:
+        name: podman-docker
+        state: present
+      when: (install_podman_docker | default(false))
+
+    - name: Point DOCKER_HOST at Podman user socket (optional)
+      ansible.builtin.copy:
+        dest: /etc/profile.d/podman-docker-host.sh
+        mode: '0644'
+        content: |
+          export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock
+      when: (install_podman_docker | default(false))
+
+    - name: Enable lingering for current user
+      ansible.builtin.command: "loginctl enable-linger {{ user }}"
+      changed_when: false
+
+    - name: Enable Podman user socket (for current user)
+      become: true
+      become_user: "{{ user }}"
+      ansible.builtin.systemd:
+        name: podman.socket
+        state: started
+        enabled: true
+        scope: user
+
+    #######################
+    # Podman Desktop (optional)
+    #######################
+
+    - name: Install Podman Desktop
+      when: (install_podman_desktop | default(false))
+      block:
+        - name: Create install dir
+          ansible.builtin.file:
+            path: "{{ pd_install_dir }}"
+            state: directory
+            mode: '0755'
+
+        - name: Download Podman Desktop tarball
+          ansible.builtin.get_url:
+            url: "https://podman-desktop.io/downloads/podman-desktop-{{ pd_version }}-linux-{{ pd_arch }}.tar.gz"
+            dest: "/tmp/podman-desktop-{{ pd_version }}.tar.gz"
+            mode: '0644'
+
+        - name: Extract Podman Desktop
+          ansible.builtin.unarchive:
+            src: "/tmp/podman-desktop-{{ pd_version }}.tar.gz"
+            dest: "{{ pd_install_dir }}"
+            remote_src: true
+            extra_opts: ["--strip-components=1"]
+
+        - name: Symlink CLI launcher
+          ansible.builtin.file:
+            src: "{{ pd_install_dir }}/podman-desktop"
+            dest: "/usr/local/bin/podman-desktop"
+            state: link
+
+        - name: Create desktop entry
+          ansible.builtin.copy:
+            dest: /usr/share/applications/podman-desktop.desktop
+            mode: '0644'
+            content: |
+              [Desktop Entry]
+              Name=Podman Desktop
+              Exec=/usr/local/bin/podman-desktop
+              Type=Application
+              Categories=Development;Utility;
+              Terminal=false
+              Icon={{ pd_install_dir }}/resources/icons/png/512x512.png
