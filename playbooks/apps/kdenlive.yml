@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Kdenlive
 # CrimsonCFG-Description: Install Kdenlive video editor
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Kdenlive
   hosts: all

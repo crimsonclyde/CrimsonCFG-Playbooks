@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: GParted
 # CrimsonCFG-Description: Install GParted partition editor
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install GParted
   hosts: all

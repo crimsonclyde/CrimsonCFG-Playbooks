@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Tailscale
 # CrimsonCFG-Description: Install Tailscale VPN client
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Tailscale
   hosts: all

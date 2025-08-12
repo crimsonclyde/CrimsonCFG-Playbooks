@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Fastfetch
 # CrimsonCFG-Description: Install Fastfetch
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 
 ---
 - name: Install Fastfetch

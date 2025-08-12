@@ -1,7 +1,7 @@
 # CrimsonCFG-Name: Media Codecs
 # CrimsonCFG-Description: Install media codecs
 # CrimsonCFG-Essential: false
-
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Enable multiverse and install media codecs
   hosts: all

@@ -1,13 +1,14 @@
 # CrimsonCFG-Name: Orca-Slicer
 # CrimsonCFG-Description: Install Orca-Slicer (AppImage)
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Orca-Slicer (AppImage)
   hosts: all
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
-  
+
   # Orca-Slicer-specific variables moved from local.yml to playbook
   vars:
     orca_appimage_dir: '{{ appimg_directory }}/OrcaSlicer'

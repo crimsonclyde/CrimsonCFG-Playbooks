@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Lenovo T470s Fingerprint Support
 # CrimsonCFG-Description: Activate fingerprint support for Lenovo T470s using open-fprintd
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Activate Lenovo T470s Fingerprint Support
   hosts: all

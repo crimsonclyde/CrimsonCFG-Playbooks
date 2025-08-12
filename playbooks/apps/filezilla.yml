@@ -1,6 +1,6 @@
 # CrimsonCFG-Description: Install FileZilla
 # CrimsonCFG-Essential: false
-# CrimsonCFG-RequiredVars: true
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install FileZilla
   hosts: all

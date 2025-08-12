@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Prism Launcher
 # CrimsonCFG-Description: Install Prism Launcher (Minecraft Launcher)
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Prism Launcher (Minecraft Launcher)
   hosts: all

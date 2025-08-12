@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Steam
 # CrimsonCFG-Description: Install Steam via Snap
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Steam via Snap
   hosts: all

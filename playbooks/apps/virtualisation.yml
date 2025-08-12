@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Virtualisation
 # CrimsonCFG-Description: Install GNOME Boxes, QEMU/KVM, and Virt-Manager
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install GNOME Boxes and QEMU/KVM and configure user permissions
   hosts: all

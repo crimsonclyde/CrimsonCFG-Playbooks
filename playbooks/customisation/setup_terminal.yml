@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Custom ZSH Setup
 # CrimsonCFG-Description: Setup ZSH, Oh My Zsh, Powerlevel10k, plugins, and GNOME Terminal profile
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Costum ZSH Setup
   hosts: all

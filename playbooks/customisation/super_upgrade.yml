@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Super Upgrade Function
 # CrimsonCFG-Description: Updates your system and snaps with one command
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Add Super Upgrade Function
   hosts: all

@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Git
 # CrimsonCFG-Description: Install and configure Git version control
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: true
 ---
 - name: Git
   hosts: all

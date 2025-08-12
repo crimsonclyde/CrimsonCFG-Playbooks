@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Signal Desktop
 # CrimsonCFG-Description: Install Signal Desktop
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install Signal Desktop
   hosts: all

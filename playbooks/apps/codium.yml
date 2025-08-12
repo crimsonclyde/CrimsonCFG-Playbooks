@@ -1,6 +1,7 @@
 # CrimsonCFG-Name: Codium
 # CrimsonCFG-Description: Install and setup Codium
 # CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
 ---
 - name: Install and setup Codium
   hosts: all
