@@ -1,0 +1,23 @@
+# CrimsonCFG-Name: Wave Terminal
+# CrimsonCFG-Description: Install Wave Terminal via Snap
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install Wave Terminal
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+
+    #######################
+    # Install Wave Terminal
+    #######################
+
+    - name: Install Wave Terminal via Snap
+      become: true
+      community.general.snap:
+        name: waveterm
+        state: present
+        classic: true 
