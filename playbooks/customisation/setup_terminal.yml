@@ -8,6 +8,23 @@
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  vars:
+    # Fonts
+    - hack_nerd_font_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Hack.zip"
+    - meslo_nerd_font_url: "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
+    # ZSH
+    ## ZSH Plugins
+    - zsh_plugins:
+        - name: zsh-autosuggestions
+          repo: https://github.com/zsh-users/zsh-autosuggestions.git
+        - name: zsh-syntax-highlighting
+          repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        - name: zsh-completions
+          repo: https://github.com/zsh-users/zsh-completions.git
+    ## Oh-my-ZSH
+    - oh_my_zsh_install_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    ## Powerlevel10K
+    - powerlevel10k_repo: https://github.com/romkatv/powerlevel10k.git
 
   tasks:
     - name: Install ZSH and fonts dependencies
