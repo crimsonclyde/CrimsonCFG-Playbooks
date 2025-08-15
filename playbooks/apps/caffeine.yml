@@ -19,6 +19,8 @@
       ansible.builtin.file:
         path: "{{ user_home }}/.config/autostart"
         state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
         mode: '0700'
       tags: caffeine
 
@@ -26,5 +28,7 @@
       ansible.builtin.copy:
         src: /usr/share/applications/caffeine-indicator.desktop
         dest: "{{ user_home }}/.config/autostart/caffeine-indicator.desktop"
+        owner: "{{ user }}"
+        group: "{{ user }}"
         mode: '0644'
       tags: caffeine
