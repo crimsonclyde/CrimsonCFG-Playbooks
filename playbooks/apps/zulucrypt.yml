@@ -1,0 +1,18 @@
+# CrimsonCFG-Name: ZuluCrypt
+# CrimsonCFG-Description: Install ZuluCrypt GUI and CLI for disk encryption
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install ZuluCrypt
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install ZuluCrypt GUI and CLI
+      ansible.builtin.apt:
+        name:
+          - zulucrypt-gui
+          - zulucrypt-cli
+        state: present
