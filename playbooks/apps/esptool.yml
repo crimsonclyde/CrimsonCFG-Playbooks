@@ -1,0 +1,29 @@
+# CrimsonCFG-Name: ESPTool
+# CrimsonCFG-Description: Install ESPTool for ESP32/ESP8266 development
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install ESPTool
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install esptool
+      ansible.builtin.apt:
+        name: esptool
+        state: present
+
+    - name: Ensure user is in dialout group
+      become: true
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: dialout
+        append: true
+
+    - name: Remove brltty package
+      ansible.builtin.apt:
+        name: brltty
+        state: absent
+        autoremove: true
