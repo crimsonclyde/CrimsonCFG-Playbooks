@@ -3,17 +3,66 @@
 # CrimsonCFG-Essential: false
 # CrimsonCFG-RequiredVars: false
 ---
-- name: Install ESPTool
+- name: Install ESPTool (PyPI, system-wide venv) and serial prereqs
   hosts: all
   become: true
   vars_files:
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  vars:
+    esptool_venv_dir: /opt/esptool
+    esptool_version: ">=4.7.1"   # ensure a fixed version newer than the broken Ubuntu build
+    esptool_entrypoint: "{{ esptool_venv_dir }}/bin/esptool.py"
 
   tasks:
-    - name: Install esptool
+    - name: Ensure base dependencies for Python venvs
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip
+        state: present
+        update_cache: true
+
+    # Optional but recommended: remove the distro esptool to avoid confusion
+    - name: Remove distro esptool (avoid missing-stub issue)
       ansible.builtin.apt:
         name: esptool
+        state: absent
+        autoremove: true
+
+    - name: Create virtualenv for esptool (if missing)
+      ansible.builtin.command:
+        cmd: "python3 -m venv {{ esptool_venv_dir }}"
+        creates: "{{ esptool_venv_dir }}/bin/python"
+
+    - name: Upgrade pip in the venv
+      ansible.builtin.pip:
+        name: pip
+        state: latest
+        virtualenv: "{{ esptool_venv_dir }}"
+
+    - name: Install esptool from PyPI into venv
+      ansible.builtin.pip:
+        name: "esptool{{ esptool_version }}"
         state: present
+        virtualenv: "{{ esptool_venv_dir }}"
+
+    # Provide friendly CLIs that shadow /usr/bin/esptool (PATH prefers /usr/local/bin)
+    - name: Create wrapper for 'esptool.py' in /usr/local/bin
+      ansible.builtin.copy:
+        dest: /usr/local/bin/esptool.py
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          exec "{{ esptool_entrypoint }}" "$@"
+
+    - name: Create wrapper for 'esptool' in /usr/local/bin
+      ansible.builtin.copy:
+        dest: /usr/local/bin/esptool
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          exec "{{ esptool_entrypoint }}" "$@"
 
     - name: Ensure user is in dialout group
       become: true
@@ -22,8 +71,20 @@
         groups: dialout
         append: true
 
-    - name: Remove brltty package
+    - name: Remove brltty package (can seize USB serial interfaces)
       ansible.builtin.apt:
         name: brltty
         state: absent
         autoremove: true
+
+    # Optional verification (won't fail the play if esptool returns nonzero)
+    - name: Check esptool version
+      ansible.builtin.command: "/usr/local/bin/esptool.py version"
+      register: esptool_ver
+      changed_when: false
+      failed_when: false
+
+    - name: Show esptool version
+      ansible.builtin.debug:
+        msg: "{{ esptool_ver.stdout | default('esptool version check skipped') }}"
+
