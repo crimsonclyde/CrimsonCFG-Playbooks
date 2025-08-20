@@ -1,0 +1,48 @@
+# CrimsonCFG-Name: Remmina Remote Desktop Client
+# CrimsonCFG-Description: Install Remmina remote desktop viewer with VNC and RDP support
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install Remmina Remote Desktop Client
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+  tasks:
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install Remmina and plugins
+      ansible.builtin.apt:
+        name:
+          - remmina
+          - remmina-plugin-vnc
+          - remmina-plugin-rdp
+          - remmina-plugin-ssh
+          - remmina-plugin-secret
+          - remmina-plugin-exec
+          - remmina-plugin-nx
+          - remmina-plugin-spice
+          - remmina-plugin-telepathy
+          - remmina-plugin-www
+          - remmina-plugin-xdmcp
+        state: present
+
+    - name: Install additional dependencies for better RDP support
+      ansible.builtin.apt:
+        name:
+          - freerdp2-x11
+          - libfreerdp-client2-2
+          - libfreerdp-client2-2-dev
+        state: present
+
+    - name: Ensure Remmina config directory exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.local/share/remmina"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: '0700'
+      tags: remmina
