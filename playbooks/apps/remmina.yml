@@ -31,8 +31,7 @@
       ansible.builtin.apt:
         name:
           - freerdp2-x11
-          - libfreerdp-client2-2
-          - libfreerdp-client2-2-dev
+          - libfreerdp-server3-3
         state: present
 
     - name: Ensure Remmina config directory exists
