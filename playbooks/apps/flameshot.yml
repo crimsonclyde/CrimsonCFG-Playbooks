@@ -28,9 +28,13 @@
         insertafter: '^\[daemon\]'
       when: gdm_conf_stat.stat.exists
 
-    - name: Restart GDM service
-      ansible.builtin.systemd:
-        name: gdm3
-        state: restarted
-        daemon_reload: yes
+    - name: Notify user about GDM restart requirement
+      ansible.builtin.debug:
+        msg: |
+          GDM configuration has been updated to disable Wayland for Flameshot compatibility.
+          To apply these changes, you need to either:
+          - Restart GDM: sudo systemctl restart gdm3
+          - Or reboot your system
+          
+          Note: This will log you out of your current session.
       when: gdm_conf_stat.stat.exists
