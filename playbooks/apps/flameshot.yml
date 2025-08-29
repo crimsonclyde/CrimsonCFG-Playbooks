@@ -1,0 +1,36 @@
+# CrimsonCFG-Name: Flameshot
+# CrimsonCFG-Description: Install Flameshot
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install Flameshot
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  tasks:
+    - name: Install Flameshot
+      ansible.builtin.apt:
+        name: flameshot
+        state: present
+
+    - name: Check if GDM custom.conf exists
+      ansible.builtin.stat:
+        path: /etc/gdm3/custom.conf
+      register: gdm_conf_stat
+
+    - name: Configure Wayland settings in GDM custom.conf
+      ansible.builtin.lineinfile:
+        path: /etc/gdm3/custom.conf
+        regexp: '^WaylandEnable='
+        line: 'WaylandEnable=false'
+        insertafter: '^\[daemon\]'
+      when: gdm_conf_stat.stat.exists
+
+    - name: Restart GDM service
+      ansible.builtin.systemd:
+        name: gdm3
+        state: restarted
+        daemon_reload: yes
+      when: gdm_conf_stat.stat.exists
