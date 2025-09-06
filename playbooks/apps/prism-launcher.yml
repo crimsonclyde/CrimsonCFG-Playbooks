@@ -13,7 +13,7 @@
   vars:
     prism_appimage_dir: '{{ appimg_directory }}/PrismLauncher'
     prism_appimage_filename: PrismLauncher.AppImage
-    prism_appimage_url: https://github.com/PrismLauncher/PrismLauncher/releases/latest/download/PrismLauncher-Linux-{{ ansible_architecture }}-{{ ansible_distribution | lower }}-{{ ansible_distribution_version | regex_replace('\\..*', '') }}.AppImage
+    prism_appimage_url: https://github.com/PrismLauncher/PrismLauncher/releases/latest/download/PrismLauncher-Linux-{{ ansible_architecture }}.AppImage
 
   tasks:
 
