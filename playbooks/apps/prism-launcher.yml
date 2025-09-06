@@ -13,7 +13,7 @@
   vars:
     prism_appimage_dir: '{{ appimg_directory }}/PrismLauncher'
     prism_appimage_filename: PrismLauncher.AppImage
-    prism_appimage_url: https://api.github.com/repos/PrismLauncher/PrismLauncher/releases/latest
+    prism_appimage_url: https://github.com/PrismLauncher/PrismLauncher/releases/latest/download/PrismLauncher-Linux-{{ ansible_architecture }}-{{ ansible_distribution | lower }}-{{ ansible_distribution_version | regex_replace('\\..*', '') }}.AppImage
 
   tasks:
 
@@ -27,29 +27,6 @@
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0755'
-
-    #######################
-    # Get latest Prism Launcher release metadata
-    #######################
-    - name: Get latest Prism Launcher release metadata
-      ansible.builtin.uri:
-        url: "{{ prism_appimage_url }}"
-        return_content: true
-      register: prism_release
-
-    - name: Find .AppImage asset
-      ansible.builtin.set_fact:
-        prism_appimage_url: >-
-          {{
-            prism_release.json.assets
-            | selectattr('name', 'match', '.*Linux-x86_64.AppImage$')
-            | map(attribute='browser_download_url')
-            | first
-          }}
-
-    - name: Debug Prism Launcher .AppImage URL
-      ansible.builtin.debug:
-        var: prism_appimage_url
 
     #######################
     # Download AppImage
