@@ -37,34 +37,48 @@
       args:
         creates: /var/snap/landscape-client/common/etc/landscape-client.conf
 
-    - name: Ensure landscape-client snap service is running
-      command: snap start --enable landscape-client.daemon
-      register: lc_service
-      changed_when: "'Started' in lc_service.stdout or 'enabled' in lc_service.stdout"
-
-    - name: Show service status
-      command: systemctl status snap.landscape-client.daemon.service --no-pager
-      register: lc_status
-      changed_when: false
-
-    - name: Debug service status
-      debug:
-        var: lc_status.stdout_lines
-
-    - name: Tail last registration log lines
-      command: snap logs landscape-client -n 50
-      register: lc_logs
-      changed_when: false
-
-    - name: Debug landscape logs
-      debug:
-        var: lc_logs.stdout_lines
+    # The snap’s systemd unit:
+    # snap.landscape-client.landscape-client.service
+    - name: Ensure Landscape client service is enabled and running
+      systemd:
+        name: snap.landscape-client.landscape-client.service
+        enabled: yes
+        state: started
 
     - name: Show applied Landscape config
       command: cat /var/snap/landscape-client/common/etc/landscape-client.conf
       register: lc_conf
       changed_when: false
 
-    - name: Debug landscape config
-      debug:
+    - debug:
         var: lc_conf.stdout_lines
+
+    # Wait until we see a successful contact/registration/exchange in logs
+    - name: Wait for Landscape client to exchange/announce
+      shell: |
+        set -o pipefail
+        journalctl -u snap.landscape-client.landscape-client.service -n 200 --no-pager \
+          | grep -E "Registered|Registration complete|Starting urgent message exchange|Announced|exchange"
+      register: lc_log_try
+      changed_when: false
+      failed_when: false
+      retries: 12
+      delay: 5
+      until: lc_log_try.rc == 0
+
+    - name: Show last Landscape client log lines
+      shell: journalctl -u snap.landscape-client.landscape-client.service -n 80 --no-pager
+      register: lc_logs
+      changed_when: false
+
+    - debug:
+        var: lc_logs.stdout_lines
+
+    - name: Assert registration/exchange occurred
+      assert:
+        that:
+          - lc_log_try.rc == 0
+        fail_msg: >
+          No registration/exchange markers found in logs. Check registration key, account name,
+          network access to {{ ping_url }}, or try re-registering.
+        success_msg: Landscape client contacted the server successfully.
