@@ -58,12 +58,13 @@
 
     - name: Get Ubuntu Pro attach code
       shell: |
-        sudo pro attach > /tmp/pro_attach_output.log 2>&1 &
-        PRO_PID=$!
-        sleep 5
-        kill $PRO_PID 2>/dev/null || true
+        # Run pro attach and capture output
+        timeout 15 sudo pro attach 2>&1 | tee /tmp/pro_attach_output.log || true
+        
+        # Extract the code from the output
         if [ -f /tmp/pro_attach_output.log ]; then
-          ATTACH_CODE=$(grep -o '[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]' /tmp/pro_attach_output.log | head -1)
+          # Look for the pattern "And provide the following code: XXXXXX"
+          ATTACH_CODE=$(grep -o "And provide the following code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/And provide the following code: //' | head -1)
           if [ ! -z "$ATTACH_CODE" ]; then
             echo "$ATTACH_CODE"
           else
@@ -78,23 +79,42 @@
         - ubuntu_pro_token | default('') == ''
         - not is_attached
 
-    - name: Display Ubuntu Pro registration info
+    - name: Debug Ubuntu Pro attach code
+      debug:
+        msg: "Captured attach code: {{ pro_attach_code.stdout }}"
+      when: 
+        - ubuntu_pro_token | default('') == ''
+        - not is_attached
+
+    - name: Display Ubuntu Pro registration info with browser option
       shell: |
         sudo -u "{{ current_user }}" \
           DISPLAY="{{ user_display }}" \
           XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
-          zenity --info \
+          zenity --question \
           --title="Ubuntu Pro Registration Required" \
-          --text="Ubuntu Pro registration required!\n\nURL: https://ubuntu.com/pro/attach\n\nAttach Code: {{ pro_attach_code.stdout }}\n\nPlease open the URL and enter the code to complete registration." \
+          --text="Ubuntu Pro registration required!\n\nURL: https://ubuntu.com/pro/attach\n\nAttach Code: {{ pro_attach_code.stdout }}\n\nClick 'Yes' to open browser, or 'No' to continue manually." \
+          --ok-label="Open Browser" \
+          --cancel-label="Continue Manually" \
           --width=500 \
           --height=300
       register: zenity_result
       changed_when: zenity_result.rc == 0
-      failed_when: zenity_result.rc != 0 and zenity_result.rc != 5
+      failed_when: zenity_result.rc != 0 and zenity_result.rc != 1 and zenity_result.rc != 5
       when: 
         - ubuntu_pro_token | default('') == ''
         - not is_attached
-        - pro_attach_code.stdout != "NO_CODE_FOUND"
+
+    - name: Open Ubuntu Pro registration URL in browser
+      shell: |
+        sudo -u "{{ current_user }}" \
+          DISPLAY="{{ user_display }}" \
+          XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
+          xdg-open "https://ubuntu.com/pro/attach"
+      when: 
+        - ubuntu_pro_token | default('') == ''
+        - not is_attached
+        - zenity_result.rc == 0
 
     - name: Clean up Ubuntu Pro attach log
       file:
