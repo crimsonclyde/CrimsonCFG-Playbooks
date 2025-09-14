@@ -48,26 +48,27 @@
       set_fact:
         is_attached: "{{ pro_status.stdout | from_json | default({}) | json_query('attached') | default(false) }}"
 
-    # Try JSON status first (newer pro versions)
-    - name: Check Pro status (JSON if supported)
-      become: true
-      command: pro status --format json
-      register: pro_status_json
-      changed_when: false
-      failed_when: false
-
-    - name: Start device-code attach in background (captures output to a file)
+    - name: Start Ubuntu Pro device-code attach in background (single task)
       become: true
       shell: |
-        nohup pro attach > {{ pro_attach_log | default('/var/tmp/pro_attach.out') }} 2>&1 &
-        echo $! > {{ (pro_attach_log | default('/var/tmp/pro_attach.out')) }}.pid
+        set -Eeuo pipefail
+        LOG="{{ pro_attach_log | default('/var/tmp/pro_attach.out') }}"
+        PIDFILE="${LOG}.pid"
+
+        # If already attached, skip and leave a note in the log
+        if pro status --format json 2>/dev/null | grep -q '"attached": *true'; then
+          echo "Already attached (JSON check)" | tee "$LOG"
+          exit 0
+        fi
+        if pro status 2>/dev/null | grep -q 'Attached to'; then
+          echo "Already attached (text check)" | tee "$LOG"
+          exit 0
+        fi
+
+        : > "$LOG"
+        ( nohup pro attach > "$LOG" 2>&1 & echo $! > "$PIDFILE" )
       args:
         executable: /bin/bash
-      when:
-        - (ubuntu_pro_token | default('')) | length == 0
-        - not pro_attached
-      async: 0
-      poll: 0
       changed_when: true
 
     - name: Get Ubuntu Pro attach code
