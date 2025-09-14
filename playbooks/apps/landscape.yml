@@ -58,19 +58,12 @@
 
     - name: Get Ubuntu Pro attach code
       shell: |
-        # Start pro attach in background and capture output
         sudo pro attach > /tmp/pro_attach_output.log 2>&1 &
         PRO_PID=$!
-        
-        # Wait for the command to generate output
         sleep 5
-        
-        # Kill the process if it's still running
         kill $PRO_PID 2>/dev/null || true
-        
-        # Extract the code from the output
         if [ -f /tmp/pro_attach_output.log ]; then
-          ATTACH_CODE=$(grep -o '[A-Z0-9]\{6\}' /tmp/pro_attach_output.log | head -1)
+          ATTACH_CODE=$(grep -o '[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]' /tmp/pro_attach_output.log | head -1)
           if [ ! -z "$ATTACH_CODE" ]; then
             echo "$ATTACH_CODE"
           else
