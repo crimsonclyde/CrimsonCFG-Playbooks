@@ -13,8 +13,112 @@
     account_name: "{{ landscape_account_name | default('standalone') }}"
     registration_key: "{{ landscape_registration_key | default('YOUR-REGISTRATION-KEY') }}"
     ping_url: "{{ landscape_ping_url | default('https://landscape.canonical.com/ping') }}"
+    ubuntu_pro_token: "{{ ubuntu_pro_token | default('') }}"
 
   tasks:
+    # ---------- Ubuntu Advantage Tools Setup ----------
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install ubuntu-advantage-tools
+      apt:
+        name: ubuntu-advantage-tools
+        state: present
+
+    - name: Check if already attached to Ubuntu Pro
+      command: pro status --format json
+      register: pro_status
+      changed_when: false
+      failed_when: false
+
+    - name: Parse Ubuntu Pro status
+      set_fact:
+        is_attached: "{{ pro_status.stdout | from_json | default({}) | json_query('attached') | default(false) }}"
+
+    - name: Attach to Ubuntu Pro with token (if provided)
+      command: pro attach {{ ubuntu_pro_token }}
+      when: 
+        - ubuntu_pro_token != ''
+        - not is_attached
+      register: pro_attach_result
+      failed_when: false
+
+    - name: Create Ubuntu Pro attach script
+      copy:
+        content: |
+          #!/bin/bash
+          echo "Starting Ubuntu Pro attach process..."
+          echo "This will open a browser window and display the attach code."
+          
+          # Start pro attach in background and capture output
+          sudo pro attach > /tmp/pro_attach_output.log 2>&1 &
+          PRO_PID=$!
+          
+          # Wait a moment for the command to start
+          sleep 3
+          
+          # Extract the code from the output
+          if [ -f /tmp/pro_attach_output.log ]; then
+            ATTACH_CODE=$(grep -o '[A-Z0-9]\{6\}' /tmp/pro_attach_output.log | head -1)
+            if [ ! -z "$ATTACH_CODE" ]; then
+              echo "Attach code found: $ATTACH_CODE"
+              echo "Opening browser to: https://ubuntu.com/pro/attach"
+              
+              # Try to open browser (works on desktop environments)
+              if command -v xdg-open >/dev/null 2>&1; then
+                xdg-open "https://ubuntu.com/pro/attach" &
+              elif command -v firefox >/dev/null 2>&1; then
+                firefox "https://ubuntu.com/pro/attach" &
+              elif command -v google-chrome >/dev/null 2>&1; then
+                google-chrome "https://ubuntu.com/pro/attach" &
+              else
+                echo "Please manually open: https://ubuntu.com/pro/attach"
+              fi
+              
+              echo "Enter the code: $ATTACH_CODE"
+              echo "Press ENTER when attachment is complete..."
+              read
+            else
+              echo "Could not extract attach code. Please run 'sudo pro attach' manually."
+            fi
+          fi
+          
+          # Clean up
+          wait $PRO_PID 2>/dev/null
+          rm -f /tmp/pro_attach_output.log
+        dest: /tmp/ubuntu_pro_attach.sh
+        mode: '0755'
+      when: 
+        - ubuntu_pro_token == ''
+        - not is_attached
+
+    - name: Run Ubuntu Pro attach script
+      shell: /tmp/ubuntu_pro_attach.sh
+      when: 
+        - ubuntu_pro_token == ''
+        - not is_attached
+
+    - name: Clean up Ubuntu Pro attach script
+      file:
+        path: /tmp/ubuntu_pro_attach.sh
+        state: absent
+      when: 
+        - ubuntu_pro_token == ''
+        - not is_attached
+
+    - name: Verify Ubuntu Pro attachment
+      command: pro status --format json
+      register: pro_status_final
+      changed_when: false
+      when: not is_attached
+
+    - name: Display final Ubuntu Pro status
+      debug:
+        msg: "Ubuntu Pro Status: {{ pro_status_final.stdout | from_json | default({}) | json_query('attached') | default('Unknown') }}"
+
+    # ---------- Landscape Client Installation ----------
+
     - name: Install landscape client via apt
       apt:
         name: landscape-client
