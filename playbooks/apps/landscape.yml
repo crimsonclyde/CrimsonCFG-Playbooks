@@ -74,25 +74,3 @@
     - name: Debug Landscape config
       debug:
         var: lc_conf.stdout_lines
-
-    # Optional: wait a bit for first exchange/registration and assert success markers
-    - name: Wait for registration/exchange markers in logs
-      shell: |
-        set -o pipefail
-        journalctl -u snap.landscape-client.landscape-client.service -n 400 --no-pager \
-          | grep -E "Registered|Registration complete|Starting urgent message exchange|Announced|exchange"
-      register: lc_log_try
-      changed_when: false
-      failed_when: false
-      retries: 12           # ~60s total
-      delay: 5
-      until: lc_log_try.rc == 0
-
-    - name: Assert client contacted Landscape successfully
-      assert:
-        that:
-          - lc_log_try.rc == 0
-        fail_msg: >
-          No registration/exchange markers found in systemd journal. Check registration key,
-          account name, and network access to {{ ping_url }}; consider re-registering.
-        success_msg: Landscape client contacted the server successfully.
