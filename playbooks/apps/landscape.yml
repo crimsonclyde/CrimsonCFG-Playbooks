@@ -1,0 +1,38 @@
+# CrimsonCFG-Name: Landscape Client
+# CrimsonCFG-Description: Install Landscape Client
+# CrimsonCFG-Essential: false
+# CrimsonCFG-RequiredVars: false
+---
+- name: Install Landscape Client
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
+
+  vars:
+    account_name: "{{ landscape_account_name | default('standalone') }}"
+    registration_key: "{{ landscape_registration_key | default('YOUR-REGISTRATION-KEY') }}"
+    ping_url: "{{ landscape_ping_url | default('https://landscape.canonical.com/ping') }}"
+
+  tasks:
+    - name: Ensure snapd is installed
+      apt:
+        name: snapd
+        state: present
+        update_cache: yes
+
+    - name: Install landscape client via snap
+      snap:
+        name: landscape-client
+        state: present
+
+    - name: Register machine with Landscape
+      command: >
+        landscape-config
+        --computer-title "{{ ansible_hostname }}"
+        --account-name "{{ account_name }}"
+        --registration-key "{{ registration_key }}"
+        --ping-url "{{ ping_url }}"
+        --silent
+      args:
+        creates: /etc/landscape/client.conf
