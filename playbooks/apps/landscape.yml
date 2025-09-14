@@ -28,7 +28,7 @@
 
     - name: Register machine with Landscape
       command: >
-        landscape-config
+        landscape-client.config
         --computer-title "{{ ansible_hostname }}"
         --account-name "{{ account_name }}"
         --registration-key "{{ registration_key }}"
