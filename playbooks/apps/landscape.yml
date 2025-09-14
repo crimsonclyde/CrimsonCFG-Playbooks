@@ -58,8 +58,8 @@
 
     - name: Get Ubuntu Pro attach code
       shell: |
-        # Run pro attach and capture output
-        timeout 15 sudo pro attach 2>&1 | tee /tmp/pro_attach_output.log || true
+        # Run pro attach as root and capture output
+        sudo timeout 15 pro attach 2>&1 | tee /tmp/pro_attach_output.log || true
         
         # Extract the code from the output
         if [ -f /tmp/pro_attach_output.log ]; then
