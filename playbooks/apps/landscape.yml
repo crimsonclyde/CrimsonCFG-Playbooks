@@ -26,7 +26,7 @@
         name: landscape-client
         state: present
 
-    - name: Register machine with Landscape
+    - name: Register machine with Landscape (snap)
       command: >
         landscape-client.config
         --computer-title "{{ ansible_hostname }}"
@@ -35,4 +35,36 @@
         --ping-url "{{ ping_url }}"
         --silent
       args:
-        creates: /etc/landscape/client.conf
+        creates: /var/snap/landscape-client/common/etc/landscape-client.conf
+
+    - name: Ensure landscape-client snap service is running
+      command: snap start --enable landscape-client.daemon
+      register: lc_service
+      changed_when: "'Started' in lc_service.stdout or 'enabled' in lc_service.stdout"
+
+    - name: Show service status
+      command: systemctl status snap.landscape-client.daemon.service --no-pager
+      register: lc_status
+      changed_when: false
+
+    - name: Debug service status
+      debug:
+        var: lc_status.stdout_lines
+
+    - name: Tail last registration log lines
+      command: snap logs landscape-client -n 50
+      register: lc_logs
+      changed_when: false
+
+    - name: Debug landscape logs
+      debug:
+        var: lc_logs.stdout_lines
+
+    - name: Show applied Landscape config
+      command: cat /var/snap/landscape-client/common/etc/landscape-client.conf
+      register: lc_conf
+      changed_when: false
+
+    - name: Debug landscape config
+      debug:
+        var: lc_conf.stdout_lines
