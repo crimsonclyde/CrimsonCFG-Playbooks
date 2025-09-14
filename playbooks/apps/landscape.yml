@@ -15,6 +15,19 @@
     ping_url: "{{ landscape_ping_url | default('https://landscape.canonical.com/ping') }}"
 
   tasks:
+    # ---------- User Environment Setup ----------
+    
+    - name: Set user environment variables
+      set_fact:
+        current_user: "{{ lookup('pipe', 'ls /home | head -n 1') }}"
+        user_display: "{{ lookup('pipe', 'sudo -u ' + lookup('pipe', 'ls /home | head -n 1') + ' bash -c \"echo $DISPLAY\"') }}"
+        user_id: "{{ lookup('pipe', 'id -u ' + lookup('pipe', 'ls /home | head -n 1')) }}"
+
+    - name: Set default display if empty
+      set_fact:
+        user_display: ":0"
+      when: user_display == ""
+
     # ---------- Ubuntu Advantage Tools Setup ----------
     - name: Update apt cache
       apt:
@@ -45,10 +58,24 @@
 
     - name: Get Ubuntu Pro attach code
       shell: |
-        timeout 10 sudo pro attach 2>&1 | tee /tmp/pro_attach_output.log || true
-        sleep 2
+        # Start pro attach in background and capture output
+        sudo pro attach > /tmp/pro_attach_output.log 2>&1 &
+        PRO_PID=$!
+        
+        # Wait for the command to generate output
+        sleep 5
+        
+        # Kill the process if it's still running
+        kill $PRO_PID 2>/dev/null || true
+        
+        # Extract the code from the output
         if [ -f /tmp/pro_attach_output.log ]; then
-          grep -o '[A-Z0-9]\{6\}' /tmp/pro_attach_output.log | head -1 || echo "NO_CODE_FOUND"
+          ATTACH_CODE=$(grep -o '[A-Z0-9]\{6\}' /tmp/pro_attach_output.log | head -1)
+          if [ ! -z "$ATTACH_CODE" ]; then
+            echo "$ATTACH_CODE"
+          else
+            echo "NO_CODE_FOUND"
+          fi
         else
           echo "NO_CODE_FOUND"
         fi
@@ -60,9 +87,9 @@
 
     - name: Display Ubuntu Pro registration info
       shell: |
-        sudo -u "{{ ansible_user_id }}" \
-          DISPLAY="{{ ansible_env.DISPLAY | default(':0') }}" \
-          XDG_RUNTIME_DIR=/run/user/"{{ ansible_user_id | regex_replace('^.*:', '') }}" \
+        sudo -u "{{ current_user }}" \
+          DISPLAY="{{ user_display }}" \
+          XDG_RUNTIME_DIR=/run/user/"{{ user_id }}" \
           zenity --info \
           --title="Ubuntu Pro Registration Required" \
           --text="Ubuntu Pro registration required!\n\nURL: https://ubuntu.com/pro/attach\n\nAttach Code: {{ pro_attach_code.stdout }}\n\nPlease open the URL and enter the code to complete registration." \
