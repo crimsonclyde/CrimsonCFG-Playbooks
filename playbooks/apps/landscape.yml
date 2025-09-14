@@ -48,37 +48,43 @@
       set_fact:
         is_attached: "{{ pro_status.stdout | from_json | default({}) | json_query('attached') | default(false) }}"
 
-    - name: Attach to Ubuntu Pro with token (if provided)
-      command: pro attach {{ ubuntu_pro_token | default('') }}
-      when: 
-        - ubuntu_pro_token | default('') != ''
-        - not is_attached
-      register: pro_attach_result
-      failed_when: false
+    - name: Start device-code attach in background (captures output to a file)
+      become: true
+      shell: |
+        nohup pro attach > {{ pro_attach_log | default('/var/tmp/pro_attach.out') }} 2>&1 &
+        echo $! > {{ (pro_attach_log | default('/var/tmp/pro_attach.out')) }}.pid
+      args:
+        executable: /bin/bash
+      when:
+        - (ubuntu_pro_token | default('')) | length == 0
+        - not pro_attached
+      async: 0
+      poll: 0
+      changed_when: true
 
     - name: Get Ubuntu Pro attach code
       shell: |
         # Run pro attach as root and capture output
-        sudo timeout 15 pro attach 2>&1 | tee /tmp/pro_attach_output.log || true
+        sudo timeout 5 pro attach 2>&1 | tee /var/var/tmp/pro_attach_output.log || true
         
         # Extract the code from the output
-        if [ -f /tmp/pro_attach_output.log ]; then
+        if [ -f /var/tmp/pro_attach_output.log ]; then
           # Try multiple patterns to find the code
           ATTACH_CODE=""
           
           # Pattern 1: "And provide the following code: XXXXXX"
           if [ -z "$ATTACH_CODE" ]; then
-            ATTACH_CODE=$(grep -o "And provide the following code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/And provide the following code: //' | head -1)
+            ATTACH_CODE=$(grep -o "And provide the following code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /var/tmp/pro_attach_output.log | sed 's/And provide the following code: //' | head -1)
           fi
           
           # Pattern 2: "code: XXXXXX" (shorter pattern)
           if [ -z "$ATTACH_CODE" ]; then
-            ATTACH_CODE=$(grep -o "code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/code: //' | head -1)
+            ATTACH_CODE=$(grep -o "code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /var/tmp/pro_attach_output.log | sed 's/code: //' | head -1)
           fi
           
           # Pattern 3: Just look for 6-character alphanumeric codes
           if [ -z "$ATTACH_CODE" ]; then
-            ATTACH_CODE=$(grep -o "[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | head -1)
+            ATTACH_CODE=$(grep -o "[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /var/tmp/pro_attach_output.log | head -1)
           fi
           
           if [ ! -z "$ATTACH_CODE" ]; then
@@ -103,7 +109,7 @@
         - not is_attached
 
     - name: Debug Ubuntu Pro attach output file
-      shell: cat /tmp/pro_attach_output.log
+      shell: cat /var/tmp/pro_attach_output.log
       register: pro_attach_debug
       changed_when: false
       when: 
@@ -149,7 +155,7 @@
 
     - name: Clean up Ubuntu Pro attach log
       file:
-        path: /tmp/pro_attach_output.log
+        path: /var/tmp/pro_attach_output.log
         state: absent
       when: 
         - ubuntu_pro_token | default('') == ''
