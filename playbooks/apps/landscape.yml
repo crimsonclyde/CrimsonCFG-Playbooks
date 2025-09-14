@@ -48,6 +48,14 @@
       set_fact:
         is_attached: "{{ pro_status.stdout | from_json | default({}) | json_query('attached') | default(false) }}"
 
+    # Try JSON status first (newer pro versions)
+    - name: Check Pro status (JSON if supported)
+      become: true
+      command: pro status --format json
+      register: pro_status_json
+      changed_when: false
+      failed_when: false
+
     - name: Start device-code attach in background (captures output to a file)
       become: true
       shell: |
