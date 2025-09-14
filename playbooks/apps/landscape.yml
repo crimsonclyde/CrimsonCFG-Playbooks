@@ -14,71 +14,85 @@
     registration_key: "{{ landscape_registration_key | default('YOUR-REGISTRATION-KEY') }}"
     ping_url: "{{ landscape_ping_url | default('https://landscape.canonical.com/ping') }}"
 
-  tasks:
-    - name: Ensure snapd is installed
-      apt:
-        name: snapd
-        state: present
-        update_cache: yes
+tasks:
+  - name: Ensure snapd is installed
+    apt:
+      name: snapd
+      state: present
+      update_cache: yes
 
-    - name: Install landscape client via snap
-      snap:
-        name: landscape-client
-        state: present
+  - name: Install landscape client via snap
+    snap:
+      name: landscape-client
+      state: present
 
-    - name: Register machine with Landscape (snap)
-      command: >
-        landscape-client.config
-        --computer-title "{{ ansible_hostname }}"
-        --account-name "{{ account_name }}"
-        --registration-key "{{ registration_key }}"
-        --ping-url "{{ ping_url }}"
-        --silent
-      args:
-        creates: /var/snap/landscape-client/common/etc/landscape-client.conf
+  - name: Register machine with Landscape (snap, idempotent)
+    command: >
+      landscape-client.config
+      --computer-title "{{ ansible_hostname }}"
+      --account-name "{{ account_name }}"
+      --registration-key "{{ registration_key }}"
+      --ping-url "{{ ping_url }}"
+      --silent
+    args:
+      # Snap stores its config under /var/snap/...
+      creates: /var/snap/landscape-client/common/etc/landscape-client.conf
 
-    # The snap’s systemd unit:
-    # snap.landscape-client.landscape-client.service
-    - name: Ensure Landscape client service is enabled and running
-      systemd:
-        name: snap.landscape-client.landscape-client.service
-        enabled: yes
-        state: started
+  - name: Ensure Landscape client service is enabled and running
+    systemd:
+      name: snap.landscape-client.landscape-client.service
+      enabled: yes
+      state: started
 
-    - name: Show applied Landscape config
-      command: cat /var/snap/landscape-client/common/etc/landscape-client.conf
-      register: lc_conf
-      changed_when: false
+  # ---------- Debug / verification via systemctl & journalctl ----------
 
-    - debug:
-        var: lc_conf.stdout_lines
+  - name: Show Landscape client service status (systemctl)
+    command: systemctl status snap.landscape-client.landscape-client.service --no-pager
+    register: lc_status
+    changed_when: false
 
-    # Wait until we see a successful contact/registration/exchange in logs
-    - name: Wait for Landscape client to exchange/announce
-      shell: |
-        set -o pipefail
-        journalctl -u snap.landscape-client.landscape-client.service -n 200 --no-pager \
-          | grep -E "Registered|Registration complete|Starting urgent message exchange|Announced|exchange"
-      register: lc_log_try
-      changed_when: false
-      failed_when: false
-      retries: 12
-      delay: 5
-      until: lc_log_try.rc == 0
+  - name: Debug service status
+    debug:
+      var: lc_status.stdout_lines
 
-    - name: Show last Landscape client log lines
-      shell: journalctl -u snap.landscape-client.landscape-client.service -n 80 --no-pager
-      register: lc_logs
-      changed_when: false
+  - name: Tail last 200 journal lines for Landscape client
+    command: journalctl -u snap.landscape-client.landscape-client.service -n 200 --no-pager
+    register: lc_journal
+    changed_when: false
+    failed_when: false
 
-    - debug:
-        var: lc_logs.stdout_lines
+  - name: Debug journal tail
+    debug:
+      var: lc_journal.stdout_lines
 
-    - name: Assert registration/exchange occurred
-      assert:
-        that:
-          - lc_log_try.rc == 0
-        fail_msg: >
-          No registration/exchange markers found in logs. Check registration key, account name,
-          network access to {{ ping_url }}, or try re-registering.
-        success_msg: Landscape client contacted the server successfully.
+  - name: Show applied Landscape snap config
+    command: cat /var/snap/landscape-client/common/etc/landscape-client.conf
+    register: lc_conf
+    changed_when: false
+    failed_when: false
+
+  - name: Debug Landscape config
+    debug:
+      var: lc_conf.stdout_lines
+
+  # Optional: wait a bit for first exchange/registration and assert success markers
+  - name: Wait for registration/exchange markers in logs
+    shell: |
+      set -o pipefail
+      journalctl -u snap.landscape-client.landscape-client.service -n 400 --no-pager \
+        | grep -E "Registered|Registration complete|Starting urgent message exchange|Announced|exchange"
+    register: lc_log_try
+    changed_when: false
+    failed_when: false
+    retries: 12           # ~60s total
+    delay: 5
+    until: lc_log_try.rc == 0
+
+  - name: Assert client contacted Landscape successfully
+    assert:
+      that:
+        - lc_log_try.rc == 0
+      fail_msg: >
+        No registration/exchange markers found in systemd journal. Check registration key,
+        account name, and network access to {{ ping_url }}; consider re-registering.
+      success_msg: Landscape client contacted the server successfully.
