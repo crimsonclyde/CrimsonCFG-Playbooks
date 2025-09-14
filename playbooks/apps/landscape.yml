@@ -15,39 +15,34 @@
     ping_url: "{{ landscape_ping_url | default('https://landscape.canonical.com/ping') }}"
 
   tasks:
-    - name: Ensure snapd is installed
+    - name: Install landscape client via apt
       apt:
-        name: snapd
+        name: landscape-client
         state: present
         update_cache: yes
 
-    - name: Install landscape client via snap
-      snap:
-        name: landscape-client
-        state: present
-
-    - name: Register machine with Landscape (snap, idempotent)
+    - name: Register machine with Landscape (apt, idempotent)
       command: >
-        landscape-client.config
+        landscape-config
         --computer-title "{{ ansible_hostname }}"
         --account-name "{{ account_name }}"
         --registration-key "{{ registration_key }}"
         --ping-url "{{ ping_url }}"
         --silent
       args:
-        # Snap stores its config under /var/snap/...
-        creates: /var/snap/landscape-client/common/etc/landscape-client.conf
+        # Apt stores its config under /etc/landscape/
+        creates: /etc/landscape/client.conf
 
     - name: Ensure Landscape client service is enabled and running
       systemd:
-        name: snap.landscape-client.landscape-client.service
+        name: landscape-client
         enabled: yes
         state: started
 
     # ---------- Debug / verification via systemctl & journalctl ----------
 
     - name: Show Landscape client service status (systemctl)
-      command: systemctl status snap.landscape-client.landscape-client.service --no-pager
+      command: systemctl status landscape-client --no-pager
       register: lc_status
       changed_when: false
 
@@ -56,7 +51,7 @@
         var: lc_status.stdout_lines
 
     - name: Tail last 200 journal lines for Landscape client
-      command: journalctl -u snap.landscape-client.landscape-client.service -n 200 --no-pager
+      command: journalctl -u landscape-client -n 200 --no-pager
       register: lc_journal
       changed_when: false
       failed_when: false
@@ -65,8 +60,8 @@
       debug:
         var: lc_journal.stdout_lines
 
-    - name: Show applied Landscape snap config
-      command: cat /var/snap/landscape-client/common/etc/landscape-client.conf
+    - name: Show applied Landscape apt config
+      command: cat /etc/landscape/client.conf
       register: lc_conf
       changed_when: false
       failed_when: false
