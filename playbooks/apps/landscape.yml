@@ -29,71 +29,60 @@
       when: user_display == ""
 
     # ---------- Ubuntu Advantage Tools Setup ----------
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    # Optional: override where to write the log
+    # vars:
+    #   pro_attach_log: "/var/tmp/pro_attach.out"
 
-    - name: Install ubuntu-advantage-tools
-      apt:
-        name: ubuntu-advantage-tools
-        state: present
-
-
-
-    # Get Ubuntu Pro attach code
-    - name: Start Ubuntu Pro device-code attach and capture URL+CODE
+    - name: Restart a fresh device-code attach (kill any old one we started)
       become: true
       shell: |
         set -Eeuo pipefail
         LOG="{{ pro_attach_log | default('/var/tmp/pro_attach.out') }}"
         PIDFILE="${LOG}.pid"
-
-        # If already attached, note and skip starting a new attach
-        if pro status --format json 2>/dev/null | grep -q '"attached": *true'; then
-          echo "Already attached" | tee "$LOG"
-          exit 0
+        if [ -f "$PIDFILE" ]; then
+          pid="$(cat "$PIDFILE" 2>/dev/null || true)"
+          if [ -n "${pid:-}" ] && ps -p "$pid" >/dev/null 2>&1; then
+            kill "$pid" || true
+            sleep 1
+          fi
+          rm -f "$PIDFILE"
         fi
+        : > "$LOG"
+        ( nohup pro attach > "$LOG" 2>&1 & echo $! > "$PIDFILE" )
+      args:
+        executable: /bin/bash
+      changed_when: true
 
-        # If an attach is already running, keep it; otherwise start one
-        if [ -f "$PIDFILE" ] && ps -p "$(cat "$PIDFILE" 2>/dev/null)" >/dev/null 2>&1; then
-          echo "pro attach already running (pid $(cat "$PIDFILE"))" | tee -a "$LOG"
+    - name: Wait for URL and CODE to appear in output
+      become: true
+      shell: |
+        LOG="{{ pro_attach_log | default('/var/tmp/pro_attach.out') }}"
+        URL="$(grep -m1 -oE 'https?://[^ ]*ubuntu.com/pro/attach[^ ]*' "$LOG" || true)"
+        CODE="$(grep -m1 -oE 'code: *[A-Z0-9-]+' "$LOG" | awk '{print $2}' || true)"
+        if [ -n "$URL" ] && [ -n "$CODE" ]; then
+          printf '%s %s\n' "$URL" "$CODE"
         else
-          : > "$LOG"
-          ( nohup pro attach > "$LOG" 2>&1 & echo $! > "$PIDFILE" )
+          exit 1
         fi
       args:
         executable: /bin/bash
-      register: pro_attach_start
-      changed_when: true
-
-    - name: Wait for device CODE to appear
-      become: true
-      shell: |
-        grep -m1 -oE 'code: [A-Z0-9-]+' {{ pro_attach_log | default('/var/tmp/pro_attach.out') }} | awk '{print $2}'
-      register: ua_device_code_raw
-      retries: 60           # tries for ~2 minutes total
+      register: ua_pair
+      retries: 60          # ~2 minutes
       delay: 2
-      until: (ua_device_code_raw.stdout | default('')) | length > 0
-      changed_when: false
-
-    - name: Capture attach URL
-      become: true
-      shell: |
-        grep -m1 -oE 'https?://[^ ]*ubuntu.com/pro/attach[^ ]*' {{ pro_attach_log | default('/var/tmp/pro_attach.out') }} \
-          || echo "https://ubuntu.com/pro/attach"
-      register: ua_attach_url_raw
+      until: ua_pair.rc == 0
       changed_when: false
 
     - name: Save URL and CODE as facts
       set_fact:
-        ua_attach_url: "{{ ua_attach_url_raw.stdout }}"
-        ua_device_code: "{{ ua_device_code_raw.stdout }}"
+        ua_attach_url: "{{ ua_pair.stdout.split()[0] }}"
+        ua_device_code: "{{ ua_pair.stdout.split()[1] }}"
 
     - name: Show the URL and CODE
       debug:
         msg:
           - "Open: {{ ua_attach_url }}"
           - "Code: {{ ua_device_code }}"
+
 
 
     # ---------- Ubuntu Pro Attach (old)----------
