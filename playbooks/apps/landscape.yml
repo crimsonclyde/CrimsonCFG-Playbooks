@@ -63,8 +63,24 @@
         
         # Extract the code from the output
         if [ -f /tmp/pro_attach_output.log ]; then
-          # Look for the pattern "And provide the following code: XXXXXX"
-          ATTACH_CODE=$(grep -o "And provide the following code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/And provide the following code: //' | head -1)
+          # Try multiple patterns to find the code
+          ATTACH_CODE=""
+          
+          # Pattern 1: "And provide the following code: XXXXXX"
+          if [ -z "$ATTACH_CODE" ]; then
+            ATTACH_CODE=$(grep -o "And provide the following code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/And provide the following code: //' | head -1)
+          fi
+          
+          # Pattern 2: "code: XXXXXX" (shorter pattern)
+          if [ -z "$ATTACH_CODE" ]; then
+            ATTACH_CODE=$(grep -o "code: [A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | sed 's/code: //' | head -1)
+          fi
+          
+          # Pattern 3: Just look for 6-character alphanumeric codes
+          if [ -z "$ATTACH_CODE" ]; then
+            ATTACH_CODE=$(grep -o "[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /tmp/pro_attach_output.log | head -1)
+          fi
+          
           if [ ! -z "$ATTACH_CODE" ]; then
             echo "$ATTACH_CODE"
           else
@@ -82,6 +98,21 @@
     - name: Debug Ubuntu Pro attach code
       debug:
         msg: "Captured attach code: {{ pro_attach_code.stdout }}"
+      when: 
+        - ubuntu_pro_token | default('') == ''
+        - not is_attached
+
+    - name: Debug Ubuntu Pro attach output file
+      shell: cat /tmp/pro_attach_output.log
+      register: pro_attach_debug
+      changed_when: false
+      when: 
+        - ubuntu_pro_token | default('') == ''
+        - not is_attached
+
+    - name: Show Ubuntu Pro attach output
+      debug:
+        msg: "Pro attach output: {{ pro_attach_debug.stdout_lines }}"
       when: 
         - ubuntu_pro_token | default('') == ''
         - not is_attached
