@@ -28,7 +28,7 @@
 
     - name: Add Syncthing Tray to autostart
       ansible.builtin.template:
-        src: syncthing.desktop.j2
+        src: "{{ templates_directory }}/syncthing.desktop.j2"
         dest: "{{ user_home }}/.config/autostart/syncthingtray.desktop"
         owner: "{{ user }}"
         group: "{{ user }}"
