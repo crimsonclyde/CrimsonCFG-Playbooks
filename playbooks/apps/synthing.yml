@@ -10,21 +10,31 @@
     - "{{ lookup('env', 'HOME') + '/.config/com.crimson.cfg/local.yml' }}"
 
   tasks:
-    - name: Install Syncthing
-      ansible.builtin.apt:
-        name: syncthing
-        state: present
+      - name: Update apt cache
+        ansible.builtin.apt:
+        update_cache: true
 
-    - name: Install Syncthing Tray
-      ansible.builtin.apt:
-        name: syncthingtray
-        state: present
+      - name: Install packages
+        sansible.builtin.apt:
+          name:
+            - syncthing
+            - syncthingtray
+          state: present
+          update_cache: yes
 
-    - name: Add syncthing tray to autostart
-      ansible.builtin.copy:
-        src: /templates/syncthing.desktop.j2
-        dest: "{{ user_home }}/.config/autostart/syncthingtray.desktop"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: '0644'
-      tags: syncthing
+      - name: Ensure autostart directory exists
+        ansible.builtin.file:
+          path: "{{ user_home }}/.config/autostart"
+          state: directory
+          owner: "{{ user }}"
+          group: "{{ user }}"
+          mode: "0755"
+
+      - name: Add Syncthing Tray to autostart (render from template)
+        ansible.builtin.template:
+          src: "{{ playbook_dir }}/../templates/syncthing.desktop.j2"
+          dest: "{{ user_home }}/.config/autostart/syncthingtray.desktop"
+          owner: "{{ user }}"
+          group: "{{ user }}"
+          mode: "0644"
+        tags: syncthing
