@@ -27,5 +27,4 @@
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: '0644'
-      tags: syncthing                    .config/autostart/syncthingtray.desktop                                        
-      
+      tags: syncthing
